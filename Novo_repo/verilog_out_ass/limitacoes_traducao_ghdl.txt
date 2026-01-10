@@ -1,0 +1,42 @@
+Limitacoes da traducao GHDL (verilog_out_ass)
+
+Contexto
+- Esta pasta contem a saida do GHDL (ghdl --synth --out=verilog) aplicada aos
+  VHDL do repositorio. Os testbenches nao sao sintetizaveis, entao nao foram
+  traduzidos de forma valida.
+
+Principais limitacoes observadas
+1) Testbenches e assertions nao sao sintetizaveis
+- O GHDL falha ao sintetizar tb_*.vhd (ex.: tb_array_ex.vhd) por uso de wait e
+  sequencias temporais. O arquivo verilog_out_ass/tb_array_example.v ficou vazio.
+- Consequencia: as assertions adicionadas nos testbenches nao aparecem no Verilog.
+
+2) Perda de semantica de tipos (integer range)
+- Em integer_ex.vhd, o tipo integer range 0 to 3 vira sinais [1:0] no Verilog
+  (verilog_out_ass/integer_example.v). O GHDL faz uext/trunc, perdendo a nocao
+  explicita de faixa e permitindo estados fora do intervalo na analise seguinte.
+
+3) Reindexacao de arrays (endereco invertido)
+- Em array_ex.vhd, o array (0 to 3) vira uma memoria n6[3:0] e o endereco e
+  convertido por n3_o = 2'b11 - addr (verilog_out_ass/array_example.v).
+- Isso reverte o indice para adequar a representacao interna, o que pode confundir
+  rastreio de indices no pipeline Verilog -> C.
+
+4) Arrays com clock (memoria + logica extra)
+- Em clocked_array_ex.vhd, o array r vira memoria n12[1:0] e um mux via n6_o,
+  com logica combinacional extra e registrador n14_data (verilog_out_ass/
+  clocked_array_example.v).
+- A estrutura RTL final nao reflete diretamente o estilo original do VHDL.
+
+5) Comentarios de usuario nao sao preservados
+- Comentarios VHDL (ex.: explicacoes nos arquivos de teste) nao aparecem no
+  Verilog. Apenas comentarios de origem (arquivo:linha:coluna) sao inseridos.
+
+6) Inicializacoes viram blocos initial
+- Inicializacoes de sinais/arrays no VHDL sao traduzidas como blocos initial
+  em Verilog (ex.: mem/r em array_example e clocked_array_example). Isso e
+  aceitavel em simulacao, mas pode ter semantica diferente em sintese real.
+
+Observacao
+- Para preservar assertions, o fluxo deve manter os testbenches em simulacao
+  VHDL, ou usar outro caminho que aceite assertions no Verilog final.
