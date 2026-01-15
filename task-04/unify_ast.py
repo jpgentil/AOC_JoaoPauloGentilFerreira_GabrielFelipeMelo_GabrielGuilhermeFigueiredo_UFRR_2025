@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""
+""" 
 Objective 5 (advanced): Front-end unifier producing a COMMON AST.
 
 Usage:
